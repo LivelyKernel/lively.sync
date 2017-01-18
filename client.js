@@ -88,6 +88,7 @@ export class Client {
     metaChannel && metaChannel.goOffline();
     var master = (opChannel || metaChannel).senderRecvrB;
     master.removeConnection(con);
+    console.log(con.metaChannel)
     con.metaChannel = null;
     con.opChannel = null;
   }

@@ -8,7 +8,9 @@ import { disconnect, disconnectAll, connect } from "lively.bindings";
 import { buildTestWorld, destroyTestWorld } from "./helper.js";
 import { Client } from "../client.js";
 import { Master } from "../master.js";
-
+import { L2LChannel } from "../l2lchannel.js";
+import L2LClient from "lively.2lively/client.js";
+import L2LTracker from "lively.2lively/tracker.js";
 
 // System.decanonicalize("mocha-es6", "http://localhost:9011/lively.sync/tests/sync-test.js")
 // var env1, env2, env3,
@@ -84,6 +86,73 @@ describe("messaging between master and client", () => {
   });
 
 });
+
+describe("lively2lively backchannel tests", function() {
+  this.timeout(1*1000)
+
+  beforeEach(async () => setup(2));
+  afterEach(async () => teardown());
+
+  it("set up socket.io backchannel for messaging", async () => {
+    var url = 'http://localhost:9011/lively-socket.io',
+    namespace = '/l2l',    
+    hostname = 'localhost',
+    port = '9011',
+    namespace = '/l2l',
+    path = '/lively-socket.io',
+    origin = `http://${hostname}:${port}`,
+    //Create new client for test
+    client = new L2LClient(origin,path,namespace)
+    client.open();
+    client.register();
+    await client.whenRegistered(300)
+    //Create channel
+    var testChannel = await L2LChannel.create(client)
+
+    //Verify that client is the 'sender'
+    expect(client).equals(testChannel.sender);
+    //Verify that both master and sender are instances of L2LClient
+    expect((testChannel.master instanceof L2LClient) &&  (testChannel.sender instanceof L2LClient)).equals(true);
+    //tear down channel and extra client
+    testChannel.close();
+    await client.remove()    
+  });
+  it("create channel with master and two clients", async () => {
+  
+  var url = 'http://localhost:9011/lively-socket.io',
+    namespace = '/l2l',    
+    hostname = 'localhost',
+    port = '9011',
+    namespace = '/l2l',
+    path = '/lively-socket.io',
+    origin = `http://${hostname}:${port}`,
+    client = new L2LClient(origin,path,namespace)
+    client.open();
+    client.register();
+    await client.whenRegistered(300)
+    var client2 = new L2LClient(origin,path,namespace);
+    client2.open();
+    client2.register();
+    await client2.whenRegistered(300)
+
+    var testChannel1 = await L2LChannel.create(client)
+    var testChannel2 = await L2LChannel.create(client2,testChannel1.master)
+
+    // console.log(testChannel1.master.socketId.split('#')[1])
+    var roomContents;
+    client.sendTo(client.trackerId,'listRoom',{roomName: testChannel1.master.socketId.split('#')[1]},(a) => roomContents = a.data.sockets)
+    await promise.waitFor(200, () => roomContents);    
+    expect(roomContents.hasOwnProperty(client.socketId)).equals(true)
+    expect(roomContents.hasOwnProperty(client2.socketId)).equals(true)
+    expect(roomContents.hasOwnProperty(testChannel1.master.socketId)).equals(true)
+    testChannel1.close();
+    testChannel2.close();
+    
+    await client.remove();
+    await client2.remove();
+  })
+
+})
 
 describe("syncing master with two clients", function() {
 

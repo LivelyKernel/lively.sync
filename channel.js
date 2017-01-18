@@ -1,5 +1,6 @@
 import { string, num, promise, fun } from "lively.lang";
-
+import { L2LChannel } from "lively.sync/l2lchannel.js";
+import L2LClient from "lively.2lively/client.js";
 var debug = false;
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -26,6 +27,7 @@ export class Channel {
     this.lifetime = 100;
     this._watchdogProcess = null
     this.goOnline();
+    // this.l2lchannel = L2LChannel.create(L2LClient.default())
   }
 
   toString() {
