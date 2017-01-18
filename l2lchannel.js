@@ -4,12 +4,7 @@ import { string, promise } from "lively.lang";
 
 export class L2LChannel {
   constructor(sender, master){
-     if (!master || !(master instanceof L2LClient)){
-       var master = L2LChannel.makeMaster()
-     }
-     this.sender = sender
-     this.master = master
-     this.online = false
+    
   }
 
   static makeMaster(hostname,port, namespace,io){
@@ -25,6 +20,44 @@ export class L2LChannel {
     return master;
   }
 
+  toString() {
+    return `<channel ${this.senderRecvrA}.${this.onReceivedMethodA} – ${this.senderRecvrB}.${this.onReceivedMethodB}>`
+  }
+
+  isOnline() { return this.online; }
+  goOffline() { this.online = false; }
+  goOnline() { this.online = true; this.watchdogProcess(); }
+
+  watchdogProcess() {
+    if (!this.isOnline() || this._watchdogProcess) return;
+
+    this._watchdogProcess = setTimeout(() => {
+      this._watchdogProcess = null;
+      if (this.queueAtoB.length) this.send([], this.senderRecvrA);
+      else if (this.queueBtoA.length) this.send([], this.senderRecvrB);
+      else return;
+    }, 800 + num.random(50));
+  }
+
+  isEmpty() {
+    return !this.queueBtoA.length && !this.queueAtoB.length;
+  }
+
+  waitForDelivery() {
+  }
+
+  componentsForSender(sender) {
+  }
+
+  send(content, sender) {
+    
+
+    return this.deliver(sender);
+  }
+
+  deliver(sender) {
+  }
+  
   static async create(client,master,options){
     if (options){
       var {hostname, port, namespace, io} = options;
