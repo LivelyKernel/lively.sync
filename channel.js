@@ -1,6 +1,4 @@
 import { string, num, promise, fun } from "lively.lang";
-import { L2LChannel } from "lively.sync/l2lchannel.js";
-import L2LClient from "lively.2lively/client.js";
 var debug = false;
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

@@ -1,23 +1,33 @@
 import L2LClient from "lively.2lively/client.js";
-import L2LTracker from "lively.2lively/tracker.js";
-import { string, promise } from "lively.lang";
+import { string, num, promise, fun } from "lively.lang";
 
-export class L2LChannel {
-  constructor(sender, master){
-    
+export class Channel {
+  constructor(senderRecvrA, onReceivedMethodA, senderRecvrB, onReceivedMethodB){
+      if (!senderRecvrA) throw new Error("no sender / receiver a!");
+      if (!senderRecvrB) throw new Error("no sender / receiver b!");
+      if (typeof senderRecvrA[onReceivedMethodA] !== "function") throw new Error(`sender a has no receive method ${onReceivedMethodA}!`);
+      if (typeof senderRecvrB[onReceivedMethodB] !== "function") throw new Error(`sender b has no receive method ${onReceivedMethodB}!`);
+      var l2lA = Channel.makeL2LClient(),
+      l2lB = Channel.makeL2LClient();      
+      this.senderRecvrA = senderRecvrA;
+      this.senderRecvrA.l2lclient = l2lA
+      this.onReceivedMethodA = onReceivedMethodA;
+      this.onReceivedMethodB = onReceivedMethodB;
+      this.senderRecvrB = senderRecvrB;
+      this.senderRecvrB.l2lclient = l2lB
+      this.queueAtoB = [];
+      this.queueBtoA = [];
+      this.delayAtoB = 0;
+      this.delayBtoA = 0;
+      this.online = false;
+      this.lifetime = 100;
+      // this._watchdogProcess = null
+      this.goOnline();
   }
 
-  static makeMaster(hostname,port, namespace,io){
-    var path;
-    hostname ? {} : hostname = 'localhost'
-    port ? {} : port = '9011'
-    namespace ? {} : namespace = '/l2l'
-    io ? path = io.path() : path = '/lively-socket.io'
-    var origin = `http://${hostname}:${port}`,
-    master = new L2LClient(origin,path,namespace)
-    master.open();
-    master.register();
-    return master;
+  static makeL2LClient(hostname,port, namespace,io){
+    var client = L2LClient.forceNew({})
+    return client
   }
 
   toString() {
@@ -25,8 +35,38 @@ export class L2LChannel {
   }
 
   isOnline() { return this.online; }
-  goOffline() { this.online = false; }
-  goOnline() { this.online = true; this.watchdogProcess(); }
+  
+  goOffline() {
+    console.log(this)
+    this.online = false;
+    var status = {senderRecvrA : null,senderRecvrB : null}
+    if (this.senderRecvrA && this.senderRecvrA.l2lclient) {
+      this.senderRecvrA.l2lclient.remove()
+      console.log('senderRecvrA disconnected')
+      status.senderRecvrA = 'offline'
+    } else {
+      status.senderRecvrA = 'online'
+      console.log('senderRecvrA not disconnected');
+      
+    }
+    if (this.senderRecvrB && this.senderRecvrB.l2lclient) {
+      this.senderRecvrB.l2lclient.remove()
+      console.log('senderRecvrB disconnected')
+      status.senderRecvrB = 'offline'
+    } else {
+      console.log('senderRecvrB not disconnected');
+      status.senderRecvrB = 'online'
+    }
+    return status
+  }
+
+  async goOnline() {    
+    await this.senderRecvrA.l2lclient.whenRegistered(300)
+    await this.senderRecvrB.l2lclient.whenRegistered(300)
+    
+    this.online = true;
+    this.watchdogProcess();
+  }
 
   watchdogProcess() {
     if (!this.isOnline() || this._watchdogProcess) return;
@@ -57,27 +97,7 @@ export class L2LChannel {
 
   deliver(sender) {
   }
-  
-  static async create(client,master,options){
-    if (options){
-      var {hostname, port, namespace, io} = options;
-    }
-    var connection =  new this(client,master,options);
-    await connection.master.whenRegistered(300)
-    connection.master.sendTo(connection.master.trackerId,'joinRoom',{roomName: connection.master.socketId.split('#')[1]})
-    connection.sender.sendTo(connection.sender.trackerId,'joinRoom',{roomName: connection.master.socketId.split('#')[1]})
 
-    connection.online = true;
-    return connection;
-  }
   
-  isOnline() { return this.online; }
-  getMembers(){ return {sender: this.sender, master: this.master}}
   
-  async close(){
-     this.sender.sendTo(this.sender.trackerId,'leaveRoom',{roomName: this.master.socketId.split('#')[1]})
-     this.master.sendTo(this.master.trackerId,'leaveRoom',{roomName: this.master.socketId.split('#')[1]})
-    await this.master.remove();
-    this.online = false;
-  }
 }
