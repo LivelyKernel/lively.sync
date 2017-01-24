@@ -7,14 +7,14 @@ export class Channel {
       if (!senderRecvrB) throw new Error("no sender / receiver b!");
       if (typeof senderRecvrA[onReceivedMethodA] !== "function") throw new Error(`sender a has no receive method ${onReceivedMethodA}!`);
       if (typeof senderRecvrB[onReceivedMethodB] !== "function") throw new Error(`sender b has no receive method ${onReceivedMethodB}!`);
-      var l2lA = Channel.makeL2LClient(),
-      l2lB = Channel.makeL2LClient();      
+      // var l2lA = Channel.makeL2LClient(),
+      // l2lB = Channel.makeL2LClient();      
       this.senderRecvrA = senderRecvrA;
-      this.senderRecvrA.l2lclient = l2lA
+      this.senderRecvrA.l2lclient ? {} : this.senderRecvrA.l2lclient = Channel.makeL2LClient()
       this.onReceivedMethodA = onReceivedMethodA;
       this.onReceivedMethodB = onReceivedMethodB;
       this.senderRecvrB = senderRecvrB;
-      this.senderRecvrB.l2lclient = l2lB
+      this.senderRecvrB.l2lclient ? {} : this.senderRecvrB.l2lclient = Channel.makeL2LClient()
       this.queueAtoB = [];
       this.queueBtoA = [];
       this.delayAtoB = 0;
