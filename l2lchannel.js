@@ -73,10 +73,13 @@ export class Channel {
     
   }
 
-  async goOnline() {    
-    await this.senderRecvrA.l2lclient.whenRegistered(300)
-    await this.senderRecvrB.l2lclient.whenRegistered(300)
-    
+  async goOnline() {
+    var l2lA = this.senderRecvrA.l2lclient,
+    l2lB = this.senderRecvrB.l2lclient
+    await l2lA.whenRegistered(300)
+    await l2lB.whenRegistered(300)
+    l2lA.sendTo(l2lA.trackerId,'joinRoom',{roomName: l2lB.socketId.split('#')[1]})
+    l2lB.sendTo(l2lB.trackerId,'joinRoom',{roomName: l2lB.socketId.split('#')[1]})
     this.online = true;
     this.watchdogProcess();
   }
