@@ -91,7 +91,13 @@ describe("messaging between master and client", () => {
 
 describe("lively2lively backchannel tests", function() {
   this.timeout(1*1000)
-
+  before(async() =>{
+    testingClient = await L2LClient.forceNew({});
+    await testingClient.whenRegistered(300);
+  })
+  after(async() => {
+    await testingClient.remove();
+  })
   beforeEach(async () => setup(2));
   afterEach(async () => teardown());
 
