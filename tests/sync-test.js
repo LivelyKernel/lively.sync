@@ -144,7 +144,37 @@ describe("lively2lively backchannel tests", function() {
     
     testChannel.goOffline();
     testChannel2.goOffline();
-    })
+  })
+
+  it('ensure clients can communicate across channel', async () => {
+    var {world1, masterWorld, client1, master} = state;  
+    var client1Buffer = []
+    var masterBuffer = []
+    var payload = "Test for lively.sync messaging"
+    var ack = 'received'
+    function masterCheck(item){      
+      masterBuffer.push(item)
+    }
+    function ackFn(item){
+        client1Buffer.push(item)        
+        client1.l2lclient.sendTo(master.l2lclient.id,'lively.sync',{payload: ack})
+    }
+    client1.receiveOpsFromMaster = ackFn;
+    master.receiveOpsFromClient = masterCheck;
+    
+    var testChannel = new L2LChannel(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")
+    await testChannel.senderRecvrA.l2lclient.whenRegistered(300)
+    await testChannel.senderRecvrB.l2lclient.whenRegistered(300)
+    
+    // testChannel.registerReceive(client1,client1.receiveOpsFromMaster)
+    // testChannel.registerReceive(master,master.receiveOpsFromClient)
+    master.l2lclient.sendTo(client1.l2lclient.id,'lively.sync',{payload: payload})
+    await promise.waitFor(200, () => client1Buffer.length  >= 1);
+    await promise.waitFor(200, () => masterBuffer.length >= 1);
+    testChannel.goOffline();
+    expect(client1Buffer[0].payload).equals(payload,'payload not correct')
+    expect(masterBuffer[0].payload).equals(ack,'payload not correct')
+  })
 
 })
 

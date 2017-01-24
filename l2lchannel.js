@@ -6,9 +6,7 @@ export class Channel {
       if (!senderRecvrA) throw new Error("no sender / receiver a!");
       if (!senderRecvrB) throw new Error("no sender / receiver b!");
       if (typeof senderRecvrA[onReceivedMethodA] !== "function") throw new Error(`sender a has no receive method ${onReceivedMethodA}!`);
-      if (typeof senderRecvrB[onReceivedMethodB] !== "function") throw new Error(`sender b has no receive method ${onReceivedMethodB}!`);
-      // var l2lA = Channel.makeL2LClient(),
-      // l2lB = Channel.makeL2LClient();      
+      if (typeof senderRecvrB[onReceivedMethodB] !== "function") throw new Error(`sender b has no receive method ${onReceivedMethodB}!`);           
       this.senderRecvrA = senderRecvrA;
       this.senderRecvrA.l2lclient ? {} : this.senderRecvrA.l2lclient = Channel.makeL2LClient()
       this.onReceivedMethodA = onReceivedMethodA;
@@ -30,6 +28,13 @@ export class Channel {
     return client
   }
 
+  registerReceive(client,method){
+    var l2l = client.l2lclient;
+    l2l.addService("lively.sync", (tracker, msg, ackFn, sender) => {
+        method(msg.data)
+    });
+  }
+  
   async getSessions(senderA,senderB,ackFn){
     var l2lA = senderA.l2lclient,
     l2lB = senderB.l2lclient
@@ -78,6 +83,10 @@ export class Channel {
     l2lB = this.senderRecvrB.l2lclient
     await l2lA.whenRegistered(300)
     await l2lB.whenRegistered(300)
+    
+    this.registerReceive(this.senderRecvrA,this.senderRecvrA.receiveOpsFromMaster)
+    this.registerReceive(this.senderRecvrB,this.senderRecvrB.receiveOpsFromClient)
+    
     l2lA.sendTo(l2lA.trackerId,'joinRoom',{roomName: l2lB.socketId.split('#')[1]})
     l2lB.sendTo(l2lB.trackerId,'joinRoom',{roomName: l2lB.socketId.split('#')[1]})
     this.online = true;
