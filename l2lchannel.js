@@ -30,6 +30,12 @@ export class Channel {
     return client
   }
 
+  async getSessions(senderA,senderB,ackFn){
+    var l2lA = senderA.l2lclient,
+    l2lB = senderB.l2lclient
+    var returnVal = 'incomplete';
+    l2lB.sendTo(l2lB.trackerId,'listRoom',{roomName: l2lB.socketId.split('#')[1]},(a) => {ackFn(a)})    
+  }
   toString() {
     return `<channel ${this.senderRecvrA}.${this.onReceivedMethodA} – ${this.senderRecvrB}.${this.onReceivedMethodB}>`
   }
