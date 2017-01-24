@@ -113,6 +113,33 @@ describe("lively2lively backchannel tests", function() {
     testChannel.goOffline();
   })
 
+  it('ensure clients can share a master', async () => {
+    // return
+    var {world1, masterWorld, client1, client2, master} = state;    
+    var testChannel = new L2LChannel(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")    
+    window.testChannel = testChannel
+    expect((testChannel.senderRecvrA.l2lclient) &&  (testChannel.senderRecvrA.l2lclient instanceof L2LClient)).equals(true,'client A not L2LClient')
+    expect((testChannel.senderRecvrB.l2lclient) &&  (testChannel.senderRecvrB.l2lclient instanceof L2LClient)).equals(true,'client B not L2LClient')
+
+    await testChannel.senderRecvrA.l2lclient.whenRegistered(300)
+    await testChannel.senderRecvrB.l2lclient.whenRegistered(300)
+
+    var channelId = testChannel.senderRecvrB.l2lclient.socketId.split('#')[1]
+
+    var testChannel2 = new L2LChannel(client2, "receiveOpsFromMaster", master, "receiveOpsFromClient")    
+    window.testChannel2 = testChannel2
+    expect((testChannel2.senderRecvrA.l2lclient) &&  (testChannel2.senderRecvrA.l2lclient instanceof L2LClient)).equals(true,'client A not L2LClient')
+    expect((testChannel2.senderRecvrB.l2lclient) &&  (testChannel2.senderRecvrB.l2lclient instanceof L2LClient)).equals(true,'client B not L2LClient')
+
+    await testChannel2.senderRecvrA.l2lclient.whenRegistered(300)
+    await testChannel2.senderRecvrB.l2lclient.whenRegistered(300)
+
+    expect(testChannel2.senderRecvrB === testChannel.senderRecvrB).equals(true,'Clients have different masters')
+    
+    testChannel.goOffline();
+    testChannel2.goOffline();
+    })
+
 })
 
 
