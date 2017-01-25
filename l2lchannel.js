@@ -4,13 +4,11 @@ import { Channel } from "./channel.js";
 
 
 export class L2LChannel extends Channel{
-  constructor(senderRecvrA, onReceivedMethodA, senderRecvrB, onReceivedMethodB){
-      console.log(super)
+  constructor(senderRecvrA, onReceivedMethodA, senderRecvrB, onReceivedMethodB){     
       super(senderRecvrA, onReceivedMethodA, senderRecvrB, onReceivedMethodB);
-      if (!this.senderRecvrA.l2lclient){ this.senderRecvrA.l2lclient = L2LChannel.makeL2LClient() }      
-      if (!this.senderRecvrB.l2lclient){ this.senderRecvrB.l2lclient = L2LChannel.makeL2LClient() }
-      this.goOnline();
-  }
+      if (!this.senderRecvrA.l2lclient){ this.senderRecvrA.l2lclient = L2LChannel.makeL2LClient() }
+      if (!this.senderRecvrB.l2lclient){ this.senderRecvrB.l2lclient = L2LChannel.makeL2LClient() }      
+  }  
 
   static makeL2LClient(hostname,port, namespace,io){
     var client = L2LClient.forceNew({})

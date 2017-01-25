@@ -96,8 +96,8 @@ export class Client {
   connectToMaster(master) {
     this.disconnectFromMaster();
     var con = this.state.connection;
-    con.opChannel = new Channel(this, "receiveOpsFromMaster", master, "receiveOpsFromClient")
-    con.metaChannel = new Channel(this, "receiveMetaMsgsFromMaster", master, "receiveMetaMsgsFromClient")
+    con.opChannel = Channel.establish(this, "receiveOpsFromMaster", master, "receiveOpsFromClient")
+    con.metaChannel = Channel.establish(this, "receiveMetaMsgsFromMaster", master, "receiveMetaMsgsFromClient")
     master.addConnection(con);
   }
 

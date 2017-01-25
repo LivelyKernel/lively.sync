@@ -23,10 +23,13 @@ export class Channel {
     this.delayBtoA = 0;
     this.online = false;
     this.lifetime = 100;
-    this._watchdogProcess = null
-    if(!this.senderRecvrA.l2lclient && !this.senderRecvrB.l2lclient){this.goOnline();}
-    // this.goOnline();
-    // this.l2lchannel = L2LChannel.create(L2LClient.default())
+    this._watchdogProcess = null    
+  }
+
+  static establish(senderRecvrA, onReceivedMethodA, senderRecvrB, onReceivedMethodB){
+    var channel = new this(senderRecvrA, onReceivedMethodA, senderRecvrB, onReceivedMethodB)
+    channel.goOnline();
+    return channel;
   }
 
   toString() {

@@ -104,7 +104,7 @@ describe("lively2lively backchannel tests", function() {
   it("ensure clients have l2l clients", async () => {
     
     var {world1, masterWorld, client1, master} = state;    
-    var testChannel = new L2LChannel(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")
+    var testChannel = L2LChannel.establish(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")
    
     expect((testChannel.senderRecvrA.l2lclient) &&  (testChannel.senderRecvrA.l2lclient instanceof L2LClient)).equals(true,'client A not L2LClient')
     expect((testChannel.senderRecvrB.l2lclient) &&  (testChannel.senderRecvrB.l2lclient instanceof L2LClient)).equals(true,'client B not L2LClient')
@@ -118,7 +118,7 @@ describe("lively2lively backchannel tests", function() {
   it('ensure clients can share a master', async () => {
     // return
     var {world1, masterWorld, client1, client2, master} = state;    
-    var testChannel = new L2LChannel(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")    
+    var testChannel = L2LChannel.establish(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")    
     window.testChannel = testChannel
     expect((testChannel.senderRecvrA.l2lclient) &&  (testChannel.senderRecvrA.l2lclient instanceof L2LClient)).equals(true,'client A not L2LClient')
     expect((testChannel.senderRecvrB.l2lclient) &&  (testChannel.senderRecvrB.l2lclient instanceof L2LClient)).equals(true,'client B not L2LClient')
@@ -128,7 +128,7 @@ describe("lively2lively backchannel tests", function() {
 
     var channelId = testChannel.senderRecvrB.l2lclient.socketId.split('#')[1]
 
-    var testChannel2 = new L2LChannel(client2, "receiveOpsFromMaster", master, "receiveOpsFromClient")    
+    var testChannel2 = L2LChannel.establish(client2, "receiveOpsFromMaster", master, "receiveOpsFromClient")    
     
     expect((testChannel2.senderRecvrA.l2lclient) &&  (testChannel2.senderRecvrA.l2lclient instanceof L2LClient)).equals(true,'client A not L2LClient')
     expect((testChannel2.senderRecvrB.l2lclient) &&  (testChannel2.senderRecvrB.l2lclient instanceof L2LClient)).equals(true,'client B not L2LClient')
@@ -158,7 +158,7 @@ describe("lively2lively backchannel tests", function() {
     client1.receiveOpsFromMaster = ackFn;
     master.receiveOpsFromClient = masterCheck;
     
-    var testChannel = new L2LChannel(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")
+    var testChannel = L2LChannel.establish(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")
     await testChannel.senderRecvrA.l2lclient.whenRegistered(300)
     await testChannel.senderRecvrB.l2lclient.whenRegistered(300)
     
