@@ -111,11 +111,7 @@ describe("lively2lively backchannel tests", function() {
 
     await testChannel.senderRecvrA.l2lclient.whenRegistered(300)
     await testChannel.senderRecvrB.l2lclient.whenRegistered(300)
-    
-    window.testChannel = testChannel;
-    console.log(testChannel);
-    window.testChannel = testChannel;
-    
+
     testChannel.goOffline();
   })
 
@@ -133,7 +129,7 @@ describe("lively2lively backchannel tests", function() {
     var channelId = testChannel.senderRecvrB.l2lclient.socketId.split('#')[1]
 
     var testChannel2 = new L2LChannel(client2, "receiveOpsFromMaster", master, "receiveOpsFromClient")    
-    window.testChannel2 = testChannel2
+    
     expect((testChannel2.senderRecvrA.l2lclient) &&  (testChannel2.senderRecvrA.l2lclient instanceof L2LClient)).equals(true,'client A not L2LClient')
     expect((testChannel2.senderRecvrB.l2lclient) &&  (testChannel2.senderRecvrB.l2lclient instanceof L2LClient)).equals(true,'client B not L2LClient')
 
