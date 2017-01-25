@@ -24,7 +24,8 @@ export class Channel {
     this.online = false;
     this.lifetime = 100;
     this._watchdogProcess = null
-    this.goOnline();
+    if(!this.senderRecvrA.l2lclient && !this.senderRecvrB.l2lclient){this.goOnline();}
+    // this.goOnline();
     // this.l2lchannel = L2LChannel.create(L2LClient.default())
   }
 

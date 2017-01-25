@@ -8,7 +8,7 @@ import { disconnect, disconnectAll, connect } from "lively.bindings";
 import { buildTestWorld, destroyTestWorld } from "./helper.js";
 import { Client } from "../client.js";
 import { Master } from "../master.js";
-import { Channel as L2LChannel } from "../l2lchannel.js";
+import { L2LChannel as L2LChannel } from "../l2lchannel.js";
 import L2LClient from "lively.2lively/client.js";
 import L2LTracker from "lively.2lively/tracker.js";
 
@@ -170,6 +170,16 @@ describe("lively2lively backchannel tests", function() {
     testChannel.goOffline();
     expect(client1Buffer[0].payload).equals(payload,'payload not correct')
     expect(masterBuffer[0].payload).equals(ack,'payload not correct')
+  })
+
+  it('Temp test, check status of inherited methods',async() => {
+    var {world1, masterWorld, client1, client2, master} = state;    
+    var testChannel = new L2LChannel(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")
+    await testChannel.senderRecvrA.l2lclient.whenRegistered(300)
+    await testChannel.senderRecvrB.l2lclient.whenRegistered(300)
+    testChannel.waitForDelivery();
+    testChannel.goOffline();
+    
   })
 
 })

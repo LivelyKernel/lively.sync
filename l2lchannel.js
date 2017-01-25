@@ -1,25 +1,14 @@
 import L2LClient from "lively.2lively/client.js";
 import { string, num, promise, fun } from "lively.lang";
+import { Channel } from "./channel.js";
 
-export class Channel {
+
+export class L2LChannel extends Channel{
   constructor(senderRecvrA, onReceivedMethodA, senderRecvrB, onReceivedMethodB){
-      if (!senderRecvrA) throw new Error("no sender / receiver a!");
-      if (!senderRecvrB) throw new Error("no sender / receiver b!");
-      if (typeof senderRecvrA[onReceivedMethodA] !== "function") throw new Error(`sender a has no receive method ${onReceivedMethodA}!`);
-      if (typeof senderRecvrB[onReceivedMethodB] !== "function") throw new Error(`sender b has no receive method ${onReceivedMethodB}!`);           
-      this.senderRecvrA = senderRecvrA;
-      if (!this.senderRecvrA.l2lclient){ this.senderRecvrA.l2lclient = Channel.makeL2LClient() }
-      this.onReceivedMethodA = onReceivedMethodA;
-      this.onReceivedMethodB = onReceivedMethodB;
-      this.senderRecvrB = senderRecvrB;
-      if (!this.senderRecvrB.l2lclient){ this.senderRecvrB.l2lclient = Channel.makeL2LClient() }
-      this.queueAtoB = [];
-      this.queueBtoA = [];
-      this.delayAtoB = 0;
-      this.delayBtoA = 0;
-      this.online = false;
-      this.lifetime = 100;
-      // this._watchdogProcess = null
+      console.log(super)
+      super(senderRecvrA, onReceivedMethodA, senderRecvrB, onReceivedMethodB);
+      if (!this.senderRecvrA.l2lclient){ this.senderRecvrA.l2lclient = L2LChannel.makeL2LClient() }      
+      if (!this.senderRecvrB.l2lclient){ this.senderRecvrB.l2lclient = L2LChannel.makeL2LClient() }
       this.goOnline();
   }
 
@@ -39,10 +28,7 @@ export class Channel {
     var l2lB = senderB.l2lclient    
     l2lB.sendTo(l2lB.trackerId,'listRoom',{roomName: l2lB.socketId.split('#')[1]},(a) => {ackFn(a)})    
   }
-  toString() {
-    return `<channel ${this.senderRecvrA}.${this.onReceivedMethodA} – ${this.senderRecvrB}.${this.onReceivedMethodB}>`
-  }
-
+  
   isOnline() { return this.online; }
   
   goOffline() {
@@ -51,8 +37,8 @@ export class Channel {
     
     var l2lA = this.senderRecvrA.l2lclient,
     l2lB = this.senderRecvrB.l2lclient
-    if(!l2lA){ console.log('l2lA Missing');return''}
-    if(!l2lB){ console.log('l2lB Missing');return''}
+    if(!l2lA){ console.log('l2lA Missing');return}
+    if(!l2lB){ console.log('l2lB Missing');return}
     l2lA.sendTo(l2lA.trackerId,'leaveRoom',{roomName: l2lB.socketId.split('#')[1]})
     
     if (this.senderRecvrA && this.senderRecvrA.l2lclient) {
@@ -64,6 +50,7 @@ export class Channel {
     }
     
     if (this.senderRecvrB && this.senderRecvrB.l2lclient) {
+      
       this.getSessions(this.senderRecvrA,this.senderRecvrB,(a)=> {
         if(a.data.length <= 1){
           l2lB.sendTo(l2lB.trackerId,'leaveRoom',{roomName: l2lB.socketId.split('#')[1]})  
@@ -91,35 +78,7 @@ export class Channel {
     this.watchdogProcess();
   }
 
-  watchdogProcess() {
-    if (!this.isOnline() || this._watchdogProcess) return;
-
-    this._watchdogProcess = setTimeout(() => {
-      this._watchdogProcess = null;
-      if (this.queueAtoB.length) this.send([], this.senderRecvrA);
-      else if (this.queueBtoA.length) this.send([], this.senderRecvrB);
-      else return;
-    }, 800 + num.random(50));
-  }
-
-  isEmpty() {
-    return !this.queueBtoA.length && !this.queueAtoB.length;
-  }
-
-  waitForDelivery() {
-  }
-
-  componentsForSender(sender) {
-  }
-
-  send(content, sender) {
-    
-
-    return this.deliver(sender);
-  }
-
-  deliver(sender) {
-  }
+  
 
   
   
