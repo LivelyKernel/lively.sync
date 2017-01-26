@@ -102,12 +102,12 @@ export class Channel {
       Promise.resolve().then(() => {
         if (!delay) {
           var outgoing = queue.slice(); queue.length = 0;
-          try { recvr[method](outgoing, sender, this); }
+          try { this.doSend(sender,outgoing,this);}
           catch (e) { console.error(`Error in ${method} of ${recvr}: ${e.stack || e}`); }
         } else {
           fun.throttleNamed(`${this.id}-${descr}`, delay*1000, () => {
             var outgoing = queue.slice(); queue.length = 0;
-            try { recvr[method](outgoing, sender, this); }
+            try { this.doSend(sender,outgoing,this);}
             catch (e) { console.error(`Error in ${method} of ${recvr}: ${e.stack || e}`); }
           })();
         }
@@ -115,4 +115,11 @@ export class Channel {
 
     return promise.waitFor(() => queue.length === 0);
   }
+
+  doSend(sender,outgoing,self) {
+    var { recvr, method, queue, delay, descr } = this.componentsForSender(sender); 
+    recvr[method](outgoing,sender,self)
+  }  
 }
+
+
