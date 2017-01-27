@@ -2,7 +2,9 @@ import { obj, arr, string, promise } from "lively.lang";
 import { morphicDefaultTransform, transformOp_1_to_n, composeOps } from "./transform.js";
 import { printOps, printOp } from "./debugging.js";
 import { Channel } from "./channel.js";
+// import { L2LChannel as Channel} from "./l2lchannel.js";
 import { serializeChange, applyChange } from "./changes.js";
+
 
 var i = val => obj.inspect(val, {maxDepth: 2});
 
@@ -93,11 +95,13 @@ export class Client {
     con.opChannel = null;
   }
 
-  connectToMaster(master) {
+  async connectToMaster(master) {
     this.disconnectFromMaster();
     var con = this.state.connection;
     con.opChannel = Channel.establish(this, "receiveOpsFromMaster", master, "receiveOpsFromClient")
+    await con.opChannel.whenOnline(500)
     con.metaChannel = Channel.establish(this, "receiveMetaMsgsFromMaster", master, "receiveMetaMsgsFromClient")
+    await con.metaChannel.whenOnline(500)
     master.addConnection(con);
   }
 

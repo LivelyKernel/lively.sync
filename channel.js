@@ -40,6 +40,13 @@ export class Channel {
   goOffline() { this.online = false; }
   goOnline() { this.online = true; this.watchdogProcess(); }
 
+  whenOnline(timeout) {
+    return promise.waitFor(timeout, () => this.isOnline())
+            .catch(err =>
+              Promise.reject(/timeout/i.test(String(err)) ?
+                new Error(`Timeout in ${this}.whenOnline`) : err))
+  }
+
   watchdogProcess() {
     if (!this.isOnline() || this._watchdogProcess) return;
 

@@ -50,7 +50,7 @@ export class L2LChannel extends Channel{
     if (this.senderRecvrB && this.senderRecvrB.l2lclient) {
       
       this.getSessions(this.senderRecvrA,this.senderRecvrB,(a)=> {
-        if(a.data.length <= 1){
+        if(a.data.sockets.hasOwnProperty(l2lB.socketId)){
           l2lB.sendTo(l2lB.trackerId,'leaveRoom',{roomName: l2lB.socketId.split('#')[1]})  
           l2lB.remove();          
         } else {
@@ -61,12 +61,14 @@ export class L2LChannel extends Channel{
     
   }
 
-  whenOnline(timeout) {
-    return promise.waitFor(timeout, () => this.isOnline())
-            .catch(err =>
-              Promise.reject(/timeout/i.test(String(err)) ?
-                new Error(`Timeout in ${this}.whenOnline`) : err))
+
+  doSend(sender,outgoing,self) {
+    var { recvr, method, queue, delay, descr } = this.componentsForSender(sender); 
+    sender.l2lclient.sendTo(recvr.l2lclient.id,'lively.sync',outgoing,()=>{console.log('received')})
+    // recvr[method](outgoing,sender,self)
   }
+
+  
   
   async goOnline() {
     var l2lA = this.senderRecvrA.l2lclient,
