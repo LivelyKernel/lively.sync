@@ -35,8 +35,8 @@ export class L2LChannel extends Channel{
     
     var l2lA = this.senderRecvrA.l2lclient,
     l2lB = this.senderRecvrB.l2lclient
-    if(!l2lA){ console.log('l2lA Missing');return}
-    if(!l2lB){ console.log('l2lB Missing');return}
+    if(!l2lA || l2lA.isRegistered() == false){ console.log('l2lA Missing');return}
+    if(!l2lB || l2lB.isRegistered() == false){ console.log('l2lB Missing');return}
     l2lA.sendTo(l2lA.trackerId,'leaveRoom',{roomName: l2lB.socketId.split('#')[1]})
     
     if (this.senderRecvrA && this.senderRecvrA.l2lclient) {
@@ -61,6 +61,13 @@ export class L2LChannel extends Channel{
     
   }
 
+  whenOnline(timeout) {
+    return promise.waitFor(timeout, () => this.isOnline())
+            .catch(err =>
+              Promise.reject(/timeout/i.test(String(err)) ?
+                new Error(`Timeout in ${this}.whenOnline`) : err))
+  }
+  
   async goOnline() {
     var l2lA = this.senderRecvrA.l2lclient,
     l2lB = this.senderRecvrB.l2lclient

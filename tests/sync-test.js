@@ -109,22 +109,20 @@ describe("lively2lively backchannel tests", function() {
     expect((testChannel.senderRecvrA.l2lclient) &&  (testChannel.senderRecvrA.l2lclient instanceof L2LClient)).equals(true,'client A not L2LClient')
     expect((testChannel.senderRecvrB.l2lclient) &&  (testChannel.senderRecvrB.l2lclient instanceof L2LClient)).equals(true,'client B not L2LClient')
 
-    await testChannel.senderRecvrA.l2lclient.whenRegistered(300)
-    await testChannel.senderRecvrB.l2lclient.whenRegistered(300)
+    await testChannel.goOnline(300)
 
     testChannel.goOffline();
   })
 
   it('ensure clients can share a master', async () => {
-    // return
+    
     var {world1, masterWorld, client1, client2, master} = state;    
     var testChannel = L2LChannel.establish(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")    
     window.testChannel = testChannel
     expect((testChannel.senderRecvrA.l2lclient) &&  (testChannel.senderRecvrA.l2lclient instanceof L2LClient)).equals(true,'client A not L2LClient')
     expect((testChannel.senderRecvrB.l2lclient) &&  (testChannel.senderRecvrB.l2lclient instanceof L2LClient)).equals(true,'client B not L2LClient')
 
-    await testChannel.senderRecvrA.l2lclient.whenRegistered(300)
-    await testChannel.senderRecvrB.l2lclient.whenRegistered(300)
+    await testChannel.whenOnline(300)
 
     var channelId = testChannel.senderRecvrB.l2lclient.socketId.split('#')[1]
 
@@ -133,8 +131,7 @@ describe("lively2lively backchannel tests", function() {
     expect((testChannel2.senderRecvrA.l2lclient) &&  (testChannel2.senderRecvrA.l2lclient instanceof L2LClient)).equals(true,'client A not L2LClient')
     expect((testChannel2.senderRecvrB.l2lclient) &&  (testChannel2.senderRecvrB.l2lclient instanceof L2LClient)).equals(true,'client B not L2LClient')
 
-    await testChannel2.senderRecvrA.l2lclient.whenRegistered(300)
-    await testChannel2.senderRecvrB.l2lclient.whenRegistered(300)
+    await testChannel2.whenOnline(300)
 
     expect(testChannel2.senderRecvrB === testChannel.senderRecvrB).equals(true,'Clients have different masters')
     
@@ -159,11 +156,9 @@ describe("lively2lively backchannel tests", function() {
     master.receiveOpsFromClient = masterCheck;
     
     var testChannel = L2LChannel.establish(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")
-    await testChannel.senderRecvrA.l2lclient.whenRegistered(300)
-    await testChannel.senderRecvrB.l2lclient.whenRegistered(300)
+
+    await testChannel.whenOnline(300)
     
-    // testChannel.registerReceive(client1,client1.receiveOpsFromMaster)
-    // testChannel.registerReceive(master,master.receiveOpsFromClient)
     master.l2lclient.sendTo(client1.l2lclient.id,'lively.sync',{payload: payload})
     await promise.waitFor(200, () => client1Buffer.length  >= 1);
     await promise.waitFor(200, () => masterBuffer.length >= 1);
@@ -173,6 +168,7 @@ describe("lively2lively backchannel tests", function() {
   })
 
   it('Temp test, check status of inherited methods',async() => {
+    return
     var {world1, masterWorld, client1, client2, master} = state;    
     var testChannel = new L2LChannel(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")
     await testChannel.senderRecvrA.l2lclient.whenRegistered(300)
