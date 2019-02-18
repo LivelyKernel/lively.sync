@@ -8,7 +8,10 @@ import { disconnect, disconnectAll, connect } from "lively.bindings";
 import { buildTestWorld, destroyTestWorld } from "./helper.js";
 import { Client } from "../client.js";
 import { Master } from "../master.js";
-
+import { L2LChannel as L2LChannel } from "../l2lchannel.js";
+import L2LClient from "lively.2lively/client.js";
+import L2LTracker from "lively.2lively/tracker.js";
+import { Channel} from "../channel.js";
 
 // System.decanonicalize("mocha-es6", "http://localhost:9011/lively.sync/tests/sync-test.js")
 // var env1, env2, env3,
@@ -27,7 +30,7 @@ async function setup(nClients) {
   for (var i = 0; i < nClients; i++) {
     let env = state[`env${i+1}`] = await buildTestWorld(masterEnv.world.exportToJSON(), pt(0,300*(i+1))),
         client = state[`client${i+1}`] = new Client(env.world, `client${i+1}`);
-    client.connectToMaster(master);
+    await client.connectToMaster(master);
     state[`world${i+1}`] = env.world;
     connect(env.changeManager, 'changeRecorded', client, 'newChange');
   }
@@ -84,6 +87,102 @@ describe("messaging between master and client", () => {
   });
 
 });
+
+    
+
+describe("lively2lively backchannel tests", function() {
+  this.timeout(1*1000)
+  before(async() =>{
+    testingClient = await L2LClient.forceNew({});
+    await testingClient.whenRegistered(300);
+  })
+  after(async() => {
+    await testingClient.remove();
+  })
+  beforeEach(async () => setup(2));
+  afterEach(async () => teardown());
+
+  it("ensure clients have l2l clients", async () => {
+    
+    var {world1, masterWorld, client1, master} = state;    
+    var testChannel = L2LChannel.establish(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")
+   
+    expect((testChannel.senderRecvrA.l2lclient) &&  (testChannel.senderRecvrA.l2lclient instanceof L2LClient)).equals(true,'client A not L2LClient')
+    expect((testChannel.senderRecvrB.l2lclient) &&  (testChannel.senderRecvrB.l2lclient instanceof L2LClient)).equals(true,'client B not L2LClient')
+
+    await testChannel.whenOnline(300)
+
+    testChannel.goOffline();
+  })
+
+  it('ensure clients can share a master', async () => {
+    
+    var {world1, masterWorld, client1, client2, master} = state;    
+    var testChannel = L2LChannel.establish(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")    
+    window.testChannel = testChannel
+    expect((testChannel.senderRecvrA.l2lclient) &&  (testChannel.senderRecvrA.l2lclient instanceof L2LClient)).equals(true,'client A not L2LClient')
+    expect((testChannel.senderRecvrB.l2lclient) &&  (testChannel.senderRecvrB.l2lclient instanceof L2LClient)).equals(true,'client B not L2LClient')
+
+    await testChannel.whenOnline(300)
+
+    var channelId = testChannel.senderRecvrB.l2lclient.socketId.split('#')[1]
+
+    var testChannel2 = L2LChannel.establish(client2, "receiveOpsFromMaster", master, "receiveOpsFromClient")    
+    
+    expect((testChannel2.senderRecvrA.l2lclient) &&  (testChannel2.senderRecvrA.l2lclient instanceof L2LClient)).equals(true,'client A not L2LClient')
+    expect((testChannel2.senderRecvrB.l2lclient) &&  (testChannel2.senderRecvrB.l2lclient instanceof L2LClient)).equals(true,'client B not L2LClient')
+
+    await testChannel2.whenOnline(300)
+
+    expect(testChannel2.senderRecvrB === testChannel.senderRecvrB).equals(true,'Clients have different masters')
+    
+    testChannel.goOffline();
+    testChannel2.goOffline();
+  })
+
+  it('ensure clients can communicate across channel', async () => {
+    var {world1, masterWorld, client1, master} = state;  
+    var client1Buffer = []
+    var masterBuffer = []
+    var payload = "Test for lively.sync messaging"
+    var ack = 'received'
+    function masterCheck(item){      
+      masterBuffer.push(item)
+    }
+    function ackFn(item){
+        client1Buffer.push(item)        
+        client1.l2lclient.sendTo(master.l2lclient.id,'lively.sync',{payload: ack})
+    }
+    client1.receiveOpsFromMaster = ackFn;
+    master.receiveOpsFromClient = masterCheck;
+    
+    var testChannel = L2LChannel.establish(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")
+
+    await testChannel.whenOnline(500)
+    
+    master.l2lclient.sendTo(client1.l2lclient.id,'lively.sync',{payload: payload})
+    await promise.waitFor(200, () => client1Buffer.length  >= 1);
+    await promise.waitFor(200, () => masterBuffer.length >= 1);
+    testChannel.goOffline();
+    expect(client1Buffer[0].payload).equals(payload,'payload not correct')
+    expect(masterBuffer[0].payload).equals(ack,'payload not correct')
+  })
+
+  it('Temp test, check status of inherited methods',async() => {
+    
+    var {world1, masterWorld, client1, client2, master} = state;    
+    var opChannel = Channel.establish(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")
+    // await opChannel.whenOnline(300)
+    var metaChannel = L2LChannel.establish(client1, "receiveOpsFromMaster", master, "receiveOpsFromClient")
+    await metaChannel.whenOnline(300)
+    console.log({state,opChannel,metaChannel,client1,master})
+    opChannel.goOffline()
+    metaChannel.goOffline()
+    
+  })
+
+})
+
 
 describe("syncing master with two clients", function() {
 
@@ -193,7 +292,7 @@ describe("syncing master with two clients", function() {
     expect(masterWorld.fill).equals(Color.green);
     expect(world1.fill).equals(Color.yellow);
 
-    client1.connectToMaster(master);
+    await client1.connectToMaster(master);
     await client1.syncWithMaster();
     expect(world1.fill).equals(Color.green);
   });

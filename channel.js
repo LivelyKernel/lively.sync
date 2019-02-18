@@ -1,5 +1,4 @@
 import { string, num, promise, fun } from "lively.lang";
-
 var debug = false;
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -24,8 +23,13 @@ export class Channel {
     this.delayBtoA = 0;
     this.online = false;
     this.lifetime = 100;
-    this._watchdogProcess = null
-    this.goOnline();
+    this._watchdogProcess = null    
+  }
+
+  static establish(senderRecvrA, onReceivedMethodA, senderRecvrB, onReceivedMethodB){
+    var channel = new this(senderRecvrA, onReceivedMethodA, senderRecvrB, onReceivedMethodB)
+    channel.goOnline();
+    return channel;
   }
 
   toString() {
@@ -35,6 +39,13 @@ export class Channel {
   isOnline() { return this.online; }
   goOffline() { this.online = false; }
   goOnline() { this.online = true; this.watchdogProcess(); }
+
+  whenOnline(timeout) {
+    return promise.waitFor(timeout, () => this.isOnline())
+            .catch(err =>
+              Promise.reject(/timeout/i.test(String(err)) ?
+                new Error(`Timeout in ${this}.whenOnline`) : err))
+  }
 
   watchdogProcess() {
     if (!this.isOnline() || this._watchdogProcess) return;
@@ -98,12 +109,12 @@ export class Channel {
       Promise.resolve().then(() => {
         if (!delay) {
           var outgoing = queue.slice(); queue.length = 0;
-          try { recvr[method](outgoing, sender, this); }
+          try { this.doSend(sender,outgoing,this);}
           catch (e) { console.error(`Error in ${method} of ${recvr}: ${e.stack || e}`); }
         } else {
           fun.throttleNamed(`${this.id}-${descr}`, delay*1000, () => {
             var outgoing = queue.slice(); queue.length = 0;
-            try { recvr[method](outgoing, sender, this); }
+            try { this.doSend(sender,outgoing,this);}
             catch (e) { console.error(`Error in ${method} of ${recvr}: ${e.stack || e}`); }
           })();
         }
@@ -111,4 +122,11 @@ export class Channel {
 
     return promise.waitFor(() => queue.length === 0);
   }
+
+  doSend(sender,outgoing,self) {
+    var { recvr, method, queue, delay, descr } = this.componentsForSender(sender); 
+    recvr[method](outgoing,sender,self)
+  }  
 }
+
+
